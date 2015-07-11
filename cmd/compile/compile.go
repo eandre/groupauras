@@ -1,12 +1,14 @@
 package main
 
 import (
-	"github.com/eandre/lunar"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"log"
 	"os"
+	"path/filepath"
+
+	"github.com/eandre/lunar"
 )
 
 func main() {
@@ -17,29 +19,38 @@ func main() {
 		log.Fatalln("Could not parse packages:", err)
 	}
 
-	for name, pkg := range pkgs {
-		file := ast.MergePackageFiles(pkg, ast.FilterUnassociatedComments|ast.FilterImportDuplicates)
-		out, err := os.Create(name + ".lua")
-		if err != nil {
-			log.Fatalln("Could not create file:", err)
-		}
-		defer out.Close()
+	if len(pkgs) != 1 {
+		log.Fatalf("Found multiple packages in directory: %v", pkgs)
+	}
 
-		parser, err := lunar.NewParser("brf", fset, []*ast.File{file})
+	target := filepath.Clean(filepath.Join("output", filepath.Clean(dir)))
+	if err := os.MkdirAll(target, 0755); err != nil {
+		log.Fatalln("Could not create directory:", err)
+	}
+
+	for _, pkg := range pkgs {
+		var files []*ast.File
+		for _, file := range pkg.Files {
+			files = append(files, file)
+		}
+
+		parser, err := lunar.NewParser(pkg.Name, fset, files)
 		if err != nil {
 			log.Fatalln("Could not create parser:", err)
 		}
 		parser.MarkTransientPackage("github.com/eandre/sbm/wow")
 
-		pe := parser.ParseNode(out, file)
-		logFile, err := os.Create("output.log")
-		if err != nil {
-			log.Fatalln("Could not create log file:", err)
-		}
-		defer logFile.Close()
-		ast.Fprint(logFile, fset, file, nil)
-		if pe != nil {
-			log.Fatalln("Could not parse node:", pe)
+		for name, file := range pkg.Files {
+			name = filepath.Base(name)
+			out, err := os.Create(filepath.Join(target, name+".lua"))
+			if err != nil {
+				log.Fatalln("Could not create file:", err)
+			}
+			defer out.Close()
+			pe := parser.ParseNode(out, file)
+			if pe != nil {
+				log.Fatalln("Could not parse node:", pe)
+			}
 		}
 	}
 }
