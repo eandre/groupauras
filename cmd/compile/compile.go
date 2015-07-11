@@ -10,8 +10,9 @@ import (
 )
 
 func main() {
+	dir := os.Args[1]
 	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, "./brf", nil, parser.ParseComments)
+	pkgs, err := parser.ParseDir(fset, dir, nil, parser.ParseComments)
 	if err != nil {
 		log.Fatalln("Could not parse packages:", err)
 	}

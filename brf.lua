@@ -3,11 +3,10 @@ local brf = _G.brf or {}
 _G.brf = brf
 
 -- Local declarations
-local Blackhand, Start, init, MyFunc
+local Blackhand, Start, init, MyFunc, init
 
 local sbm = _G["sbm"]
 
-local wow = _G["wow"]
 
 Blackhand = {}
 brf.Blackhand = Blackhand
@@ -25,4 +24,8 @@ end
 MyFunc = function()
 end
 brf.MyFunc = MyFunc
+
+init = function()
+	MyFunc()
+end
 
