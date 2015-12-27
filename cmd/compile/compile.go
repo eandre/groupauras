@@ -1,59 +1,55 @@
 package main
 
 import (
-	"go/ast"
-	"go/format"
-	"go/parser"
-	"go/token"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/eandre/lunar"
+	"golang.org/x/tools/go/loader"
+	"strings"
 )
 
 func main() {
-	dir := os.Args[1]
-	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, dir, nil, parser.ParseComments)
+	var conf loader.Config
+	_, err := conf.FromArgs(os.Args[1:], false)
+	if err != nil {
+		log.Fatalln("Could not load packages:", err)
+	}
+
+	prog, err := conf.Load()
 	if err != nil {
 		log.Fatalln("Could not parse packages:", err)
 	}
-
-	if len(pkgs) != 1 {
-		log.Fatalf("Found multiple packages in directory: %v", pkgs)
-	}
-
-	pkgname := filepath.Clean(filepath.Base(dir))
 
 	target := "output"
 	if err := os.MkdirAll(target, 0755); err != nil {
 		log.Fatalln("Could not create directory:", err)
 	}
 
-	for _, pkg := range pkgs {
-		file, err := lunar.MergeFiles(fset, pkg.Files, pkgname)
-		if err != nil {
-			log.Fatalln("Could not merge files:", err)
+	parser := lunar.NewParser(prog)
+	parser.MarkTransientPackage("github.com/eandre/sbm/wow")
+	for _, pkg := range prog.InitialPackages() {
+		if parser.IsTransientPkg(pkg.Pkg) {
+			continue
 		}
 
-		format.Node(os.Stdout, fset, file)
-
-		parser, err := lunar.NewParser(pkg.Name, fset, []*ast.File{file})
-		if err != nil {
-			log.Fatalln("Could not create parser:", err)
+		pkgPath := filepath.Join(target, pkg.Pkg.Path())
+		if err := os.MkdirAll(pkgPath, 0755); err != nil {
+			log.Fatalln("Could not create directory:", err)
 		}
-		parser.MarkTransientPackage("github.com/eandre/sbm/wow")
+		for _, f := range pkg.Files {
+			fname := filepath.Base(prog.Fset.File(f.Pos()).Name())
+			fname = strings.TrimSuffix(fname, ".go")
+			out, err := os.Create(filepath.Join(pkgPath, fname + ".lua"))
+			if err != nil {
+				log.Fatalln("Could not create file:", err)
+			}
+			defer out.Close()
 
-		out, err := os.Create(filepath.Join(target, pkgname+".lua"))
-		if err != nil {
-			log.Fatalln("Could not create file:", err)
-		}
-		defer out.Close()
-
-		pe := parser.ParseNode(out, file)
-		if pe != nil {
-			log.Fatalln("Could not parse node:", pe)
+			if err := parser.ParseNode(out, f); err != nil {
+				log.Fatalf("Could not parse file %s: %v", fname, err)
+			}
 		}
 	}
 }
