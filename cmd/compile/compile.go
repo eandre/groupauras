@@ -1,26 +1,26 @@
 package main
 
 import (
+	"bufio"
+	"flag"
+	"fmt"
+	"go/types"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/eandre/lunar"
 	"golang.org/x/tools/go/loader"
-	"strings"
-	"bufio"
-	"fmt"
-	"io"
-	"flag"
-	"path"
-	"io/ioutil"
-"golang.org/x/tools/go/types"
 )
 
 func main() {
 	var (
 		output = flag.String("output", "./output", "Output directory")
-		strip = flag.String("strip", "", "Path prefix to strip")
+		strip  = flag.String("strip", "", "Path prefix to strip")
 	)
 	flag.Parse()
 	*strip = path.Clean(*strip)
@@ -44,7 +44,11 @@ func main() {
 	pkgName := filepath.Base(*output)
 	var filenames []string
 
-	pkgs := sortPkgs(prog.InitialPackages())
+	var infos []*loader.PackageInfo
+	for _, i := range prog.AllPackages {
+		infos = append(infos, i)
+	}
+	pkgs := sortPkgs(infos)
 	for _, pkg := range pkgs {
 		if parser.IsTransientPkg(pkg.Pkg) {
 			continue
@@ -118,7 +122,7 @@ func writePackage(prog *loader.Program, root, pkgName string, filenames []string
 		return err
 	}
 
-	toc, err := os.Create(filepath.Join(root, pkgName + ".toc"))
+	toc, err := os.Create(filepath.Join(root, pkgName+".toc"))
 	if err != nil {
 		return err
 	}
@@ -135,7 +139,7 @@ func writePackage(prog *loader.Program, root, pkgName string, filenames []string
 }
 
 type tocWriter struct {
-	keys []string
+	keys  []string
 	files []string
 }
 
