@@ -1,6 +1,6 @@
 -- Package declaration
-local bridge = _G["github.com/eandre/groupauras/bridge"] or {}
-_G["github.com/eandre/groupauras/bridge"] = bridge
+local bridge = _G["github.com/eandre/groupauras/shim/bridge"] or {}
+_G["github.com/eandre/groupauras/shim/bridge"] = bridge
 
 local builtins = _G.lunar_go_builtins
 

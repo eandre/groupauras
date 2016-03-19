@@ -1,6 +1,6 @@
 package aura
 
-import "github.com/eandre/groupauras/bridge"
+import "github.com/eandre/groupauras/shim/bridge"
 
 type CompiledAura struct {
 	Aura     *Aura

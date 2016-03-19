@@ -1,8 +1,8 @@
 package trigger
 
 import (
-	"github.com/eandre/groupauras/aura"
-	"github.com/eandre/groupauras/bridge"
+	"github.com/eandre/groupauras/core/aura"
+	"github.com/eandre/groupauras/shim/bridge"
 )
 
 type Watcher struct {

@@ -1,0 +1,7 @@
+{
+	"libs": [
+		"LibStub",
+		"CallbackHandler-1.0",
+		"HereBeDragons-1.0"
+	]
+}
