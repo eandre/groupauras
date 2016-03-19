@@ -1,11 +1,17 @@
 package bridge
 
-type EventListener func(event string, args []interface{})
-
-func RegisterEvent(event string, listener EventListener) {
+func RegisterEvent(event string, f func(string, []interface{})) {
 
 }
 
-func UnregisterEvent(event string, listener EventListener) {
+func UnregisterEvent(event string, f func(string, []interface{})) {
+
+}
+
+func RegisterUpdate(f func(dt float32)) {
+
+}
+
+func UnregisterUpdate(f func(dt float32)) {
 
 }

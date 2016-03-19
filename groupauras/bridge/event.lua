@@ -5,8 +5,10 @@ _G["github.com/eandre/sbm/groupauras/bridge"] = bridge
 local f = CreateFrame("Frame")
 
 local eventMap = {}
+local updates = {}
 
 f:SetScript("OnEvent", function(self, event, ...)
+    event = event:upper()
     local m = eventMap[event]
     if m == nil then
         return
@@ -14,6 +16,12 @@ f:SetScript("OnEvent", function(self, event, ...)
     local args = {...}
     for listener in pairs(m) do
         listener(event, args)
+    end
+end)
+
+f:SetScript("OnUpdate", function(self, dt)
+    for listener in pairs(updates) do
+        listener(dt)
     end
 end)
 
@@ -42,3 +50,10 @@ bridge.UnregisterEvent = function(event, listener)
     end
 end
 
+bridge.RegisterUpdate = function(listener)
+    updates[listener] = true
+end
+
+bridge.UnregisterUpdate = function(listener)
+    updates[listener] = nil
+end

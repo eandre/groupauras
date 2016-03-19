@@ -4,8 +4,11 @@ type Aura struct {
 	Name     string
 	Enables  map[string]string
 	Disables map[string]string
-	Events   map[string]string
-	Update   string
+
+	Events       map[string]string
+	OnUpdate     string
+	OnActivate   string
+	OnDeactivate string
 }
 
 func New(name string) *Aura {
