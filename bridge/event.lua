@@ -1,6 +1,6 @@
 -- Package declaration
-local bridge = _G["github.com/eandre/sbm/groupauras/bridge"] or {}
-_G["github.com/eandre/sbm/groupauras/bridge"] = bridge
+local bridge = _G["github.com/eandre/groupauras/bridge"] or {}
+_G["github.com/eandre/groupauras/bridge"] = bridge
 
 local f = CreateFrame("Frame")
 
