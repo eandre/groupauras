@@ -4,8 +4,8 @@ import "github.com/eandre/groupauras/bridge"
 
 type CompiledAura struct {
 	Aura     *Aura
-	Enables  map[string]func(event string, args []interface{}) bool
-	Disables map[string]func(event string, args []interface{}) bool
+	Enables  map[string]func(aura *CompiledAura, event string, args []interface{}) bool
+	Disables map[string]func(aura *CompiledAura, event string, args []interface{}) bool
 	Active   bool
 
 	// Relevant for activate auras
@@ -65,14 +65,14 @@ func Compile(aura *Aura) (*CompiledAura, error) {
 		if err != nil {
 			return nil, err
 		}
-		ca.Enables[event] = f.(func(string, []interface{}) bool)
+		ca.Enables[event] = f.(func(*CompiledAura, string, []interface{}) bool)
 	}
 	for event, src := range aura.Disables {
 		f, err := bridge.Eval(src)
 		if err != nil {
 			return nil, err
 		}
-		ca.Disables[event] = f.(func(string, []interface{}) bool)
+		ca.Disables[event] = f.(func(*CompiledAura, string, []interface{}) bool)
 	}
 	for event, src := range aura.Events {
 		f, err := bridge.Eval(src)
@@ -107,8 +107,9 @@ func Compile(aura *Aura) (*CompiledAura, error) {
 
 func newCompiledAura(aura *Aura) *CompiledAura {
 	return &CompiledAura{
-		Enables:  make(map[string]func(string, []interface{}) bool),
-		Disables: make(map[string]func(string, []interface{}) bool),
+		Aura:     aura,
+		Enables:  make(map[string]func(*CompiledAura, string, []interface{}) bool),
+		Disables: make(map[string]func(*CompiledAura, string, []interface{}) bool),
 		events:   make(map[string]func(*CompiledAura, string, []interface{})),
 	}
 }

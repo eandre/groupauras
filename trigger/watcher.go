@@ -7,22 +7,17 @@ import (
 
 type Watcher struct {
 	all       map[*aura.CompiledAura]bool
-	enables   map[string]map[*aura.CompiledAura]func(event string, args []interface{}) bool
-	disables  map[string]map[*aura.CompiledAura]func(event string, args []interface{}) bool
+	enables   map[string]map[*aura.CompiledAura]func(*aura.CompiledAura, string, []interface{}) bool
+	disables  map[string]map[*aura.CompiledAura]func(*aura.CompiledAura, string, []interface{}) bool
 	listeners map[string]int
-
-	enableFunc  func(*aura.CompiledAura)
-	disableFunc func(*aura.CompiledAura)
 }
 
-func NewWatcher(enable, disable func(*aura.CompiledAura)) *Watcher {
+func NewWatcher() *Watcher {
 	return &Watcher{
-		all:         make(map[*aura.CompiledAura]bool),
-		enables:     make(map[string]map[*aura.CompiledAura]func(event string, args []interface{}) bool),
-		disables:    make(map[string]map[*aura.CompiledAura]func(event string, args []interface{}) bool),
-		listeners:   make(map[string]int),
-		enableFunc:  enable,
-		disableFunc: disable,
+		all:       make(map[*aura.CompiledAura]bool),
+		enables:   make(map[string]map[*aura.CompiledAura]func(*aura.CompiledAura, string, []interface{}) bool),
+		disables:  make(map[string]map[*aura.CompiledAura]func(*aura.CompiledAura, string, []interface{}) bool),
+		listeners: make(map[string]int),
 	}
 }
 
@@ -35,7 +30,7 @@ func (t *Watcher) Add(a *aura.CompiledAura) {
 	for event, f := range a.Enables {
 		m := t.enables[event]
 		if m == nil {
-			m = make(map[*aura.CompiledAura]func(event string, args []interface{}) bool)
+			m = make(map[*aura.CompiledAura]func(*aura.CompiledAura, string, []interface{}) bool)
 			t.enables[event] = m
 		}
 		m[a] = f
@@ -45,7 +40,7 @@ func (t *Watcher) Add(a *aura.CompiledAura) {
 	for event, f := range a.Disables {
 		m := t.disables[event]
 		if m == nil {
-			m = make(map[*aura.CompiledAura]func(event string, args []interface{}) bool)
+			m = make(map[*aura.CompiledAura]func(*aura.CompiledAura, string, []interface{}) bool)
 			t.disables[event] = m
 		}
 		m[a] = f
@@ -97,14 +92,14 @@ func (t *Watcher) removeListener(event string) {
 
 func (t *Watcher) onEvent(event string, args []interface{}) {
 	for aura, f := range t.enables[event] {
-		if f(event, args) {
-			t.enableFunc(aura)
+		if !aura.Active && f(aura, event, args) {
+			aura.Activate()
 		}
 	}
 
 	for aura, f := range t.disables[event] {
-		if f(event, args) {
-			t.disableFunc(aura)
+		if aura.Active && f(aura, event, args) {
+			aura.Deactivate()
 		}
 	}
 }
