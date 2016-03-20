@@ -24,7 +24,10 @@ func onWorldEnter(event string, args []interface{}) {
 	t := trigger.NewWatcher()
 	t.Add(ca)
 
-	Point = draw.NewPoint(nil, "diamond")
+	Point = draw.NewPoint(&draw.PointCfg{
+		Pos:     draw.StaticPlayerPosition(),
+		Texture: "diamond",
+	})
 }
 
 func init() {

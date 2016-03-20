@@ -19,8 +19,8 @@ type Region interface {
 	SetSize(width, height float32)
 
 	GetNumPoints() int
-	GetPoint(idx int) (point AnchorPoint, relativeTo Region, relativePoint AnchorPoint, xOffset, yOffset float32)
-	SetPoint(point AnchorPoint, relativeTo Region, relativePoint AnchorPoint, xOffset, yOffset float32)
+	GetPoint(idx int) (point AnchorPoint, relativeTo UIObject, relativePoint AnchorPoint, xOffset, yOffset float32)
+	SetPoint(point AnchorPoint, relativeTo UIObject, relativePoint AnchorPoint, xOffset, yOffset float32)
 	SetAllPoints(region Region)
 	ClearAllPoints()
 

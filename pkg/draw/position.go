@@ -7,6 +7,24 @@ type Position interface {
 	Pos() (x, y hbd.WorldCoord, inst hbd.InstanceID)
 }
 
+func PlayerPosition() Position {
+	return &playerPosition{}
+}
+
+func UnitPosition(unitID string) Position {
+	return &unitPosition{unitID}
+}
+
+func StaticPlayerPosition() Position {
+	x, y, inst := hbd.PlayerWorldPosition()
+	return &staticPosition{x, y, inst}
+}
+
+func StaticUnitPosition(unitID string) Position {
+	x, y, inst := hbd.UnitWorldPosition(unitID)
+	return &staticPosition{x, y, inst}
+}
+
 type staticPosition struct {
 	x, y hbd.WorldCoord
 	inst hbd.InstanceID

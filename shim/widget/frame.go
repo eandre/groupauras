@@ -16,7 +16,7 @@ const (
 )
 
 type Frame interface {
-	Region
+	VisibleRegion
 	ScriptObject
 
 	CreateTexture() Texture

@@ -2,23 +2,43 @@ package draw
 
 import "github.com/eandre/groupauras/shim/widget"
 
+type PointCfg struct {
+	Pos     Position
+	Texture string
+}
+
 type Point struct {
-	Pos   Position
+	cfg   *PointCfg
 	frame *pointFrame
 }
 
-func NewPoint(pos Position, texture string) *Point {
-	point := &Point{
-		Pos:   pos,
+func NewPoint(cfg *PointCfg) *Point {
+	p := &Point{
+		cfg:   cfg,
 		frame: getPointFrame(),
 	}
-	point.frame.SetTexture(texture)
-	point.frame.frame.SetSize(20, 20)
-	return point
+	p.frame.SetTexture(cfg.Texture)
+	p.frame.frame.SetSize(20, 20)
+	markPointActive(p)
+	return p
 }
 
 func (p *Point) Free() {
+	markPointInactive(p)
 	freePointFrame(p.frame)
+}
+
+func (p *Point) update() {
+	x, y, inst := p.cfg.Pos.Pos()
+	dx, dy, show := displayOffset(x, y, inst)
+	if !show {
+		p.frame.frame.Hide()
+		return
+	}
+	p.frame.frame.Show()
+
+	// TODO(eandre) Determine if we should update?
+	p.frame.SetPosition(dx, dy)
 }
 
 type pointFrame struct {
@@ -37,6 +57,11 @@ func (f *pointFrame) SetTexture(texture string) {
 		f.texture.SetTexCoord(0, 1, 0, 1)
 		f.texture.SetBlendMode(widget.BlendBlend)
 	}
+}
+
+func (f *pointFrame) SetPosition(dx, dy float32) {
+	f.frame.ClearAllPoints()
+	f.frame.SetPoint("CENTER", f.frame.GetParent(), "CENTER", dx, dy)
 }
 
 var pointFrameCache map[*pointFrame]bool
