@@ -25,8 +25,10 @@ func onWorldEnter(event string, args []interface{}) {
 	t.Add(ca)
 
 	Point = draw.NewPoint(&draw.PointCfg{
-		Pos:     draw.StaticPlayerPosition(),
-		Texture: "diamond",
+		Pos:           draw.StaticPlayerPosition(),
+		Texture:       "diamond",
+		RotateDegrees: 360,
+		RotateSpeed:   5,
 	})
 }
 

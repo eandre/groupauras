@@ -27,8 +27,8 @@ type Region interface {
 	IsDragging() bool
 	IsMouseOver(topOff, leftOff, bottomOff, rightOff float32) bool
 
-	CreateAnimationGroup() *AnimationGroup
-	// GetAnimationGroups() []*AnimationGroup -- returns "..."
+	CreateAnimationGroup() AnimationGroup
+	// GetAnimationGroups() []AnimationGroup -- returns "..."
 	StopAnimating()
 
 	CanChangeProtectedState() bool

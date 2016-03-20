@@ -22,11 +22,15 @@ func CopyLibs(metadataPath, output string) (tocPaths []string, err error) {
 		return nil, err
 	}
 
+	copyFilter := func(path string, info os.FileInfo) bool {
+		return strings.HasSuffix(path, ".lua")
+	}
+
 	baseDir := filepath.Dir(metadataPath)
 	for _, lib := range metadata.Libs {
 		srcPath := filepath.Join(baseDir, lib)
 		dstPath := filepath.Join(output, "lualibs", lib)
-		paths, err := copyDir(srcPath, dstPath)
+		paths, err := CopyDir(srcPath, dstPath, copyFilter)
 		if err != nil {
 			return nil, err
 		}
@@ -38,12 +42,18 @@ func CopyLibs(metadataPath, output string) (tocPaths []string, err error) {
 	return tocPaths, nil
 }
 
-func copyDir(src, dst string) (paths []string, err error) {
+func CopyDir(src, dst string, filter func(path string, info os.FileInfo) bool) (paths []string, err error) {
+	if filter == nil {
+		filter = func(string, os.FileInfo) bool {
+			return true
+		}
+	}
+
 	err = filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() || !strings.HasSuffix(path, ".lua") {
+		if info.IsDir() || !filter(path, info) {
 			return nil
 		}
 		in, err := ioutil.ReadFile(path)

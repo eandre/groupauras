@@ -1,15 +1,28 @@
 package draw
 
-import "github.com/eandre/groupauras/shim/widget"
+import (
+	"github.com/eandre/groupauras/shim/widget"
+	"github.com/eandre/groupauras/shim/wow"
+)
 
 type PointCfg struct {
 	Pos     Position
 	Texture string
+
+	// If set, the texture will rotate
+	RotateDegrees float32
+	RotateSpeed   float32
+
+	// Number of seconds the point will exist for.
+	// If zero, it will never expire.
+	Duration float32
 }
 
 type Point struct {
 	cfg   *PointCfg
 	frame *pointFrame
+
+	deadline float32
 }
 
 func NewPoint(cfg *PointCfg) *Point {
@@ -17,22 +30,48 @@ func NewPoint(cfg *PointCfg) *Point {
 		cfg:   cfg,
 		frame: getPointFrame(),
 	}
-	p.frame.SetTexture(cfg.Texture)
+	p.SetTexture(cfg.Texture)
 	p.frame.frame.SetSize(20, 20)
+
+	if cfg.RotateSpeed != 0 {
+		p.Rotate(cfg.RotateDegrees, cfg.RotateSpeed)
+	}
+	if cfg.Duration != 0 {
+		p.SetDuration(cfg.Duration)
+	}
+
 	markPointActive(p)
 	return p
 }
 
 func (p *Point) Free() {
+	p.frame.Free()
 	markPointInactive(p)
 	freePointFrame(p.frame)
 }
 
+func (p *Point) Rotate(degrees, speed float32) {
+	p.frame.Rotate(degrees, speed)
+}
+
+func (p *Point) SetTexture(texture string) {
+	p.frame.SetTexture(texture)
+}
+
+func (p *Point) SetDuration(secs float32) {
+	p.deadline = wow.GetTime() + secs
+}
+
 func (p *Point) update() {
+	if p.deadline != 0 && wow.GetTime() > p.deadline {
+		p.Free()
+		return
+	}
+
 	x, y, inst := p.cfg.Pos.Pos()
 	dx, dy, show := displayOffset(x, y, inst)
 	if !show {
-		p.frame.frame.Hide()
+		p.Free()
 		return
 	}
 	p.frame.frame.Show()
@@ -42,8 +81,10 @@ func (p *Point) update() {
 }
 
 type pointFrame struct {
-	frame   widget.Frame
-	texture widget.Texture
+	frame            widget.Frame
+	texture          widget.Texture
+	repeatAnimations widget.AnimationGroup
+	rotate           widget.RotationAnimation
 }
 
 func (f *pointFrame) SetTexture(texture string) {
@@ -64,6 +105,46 @@ func (f *pointFrame) SetPosition(dx, dy float32) {
 	f.frame.SetPoint("CENTER", f.frame.GetParent(), "CENTER", dx, dy)
 }
 
+func (f *pointFrame) Rotate(degrees, speed float32) {
+	norm := 360 / degrees
+	speed = speed * norm
+	degrees = -360
+	if speed < 0 {
+		speed = speed * -1
+		degrees = 360
+	}
+
+	f.rotate.SetDuration(speed)
+	f.rotate.SetDegrees(degrees)
+	f.repeatAnimations.Play()
+}
+
+func (f *pointFrame) Reset() {
+	f.frame.StopAnimating()
+	f.frame.Show()
+	f.frame.SetAlpha(1)
+	f.repeatAnimations.Stop()
+}
+
+func (f *pointFrame) Free() {
+	f.frame.Hide()
+	f.frame.StopAnimating()
+}
+
+func newPointFrame() *pointFrame {
+	f := &pointFrame{}
+	f.frame = widget.CreateFrame(canvas)
+	f.frame.SetFrameStrata(widget.StrataMedium)
+	f.texture = f.frame.CreateTexture()
+	f.texture.SetAllPoints(f.frame)
+	f.texture.SetDrawLayer(widget.LayerArtwork, 0)
+
+	f.repeatAnimations = f.frame.CreateAnimationGroup()
+	f.repeatAnimations.SetLooping(widget.LoopRepeat)
+	f.rotate = f.repeatAnimations.CreateAnimation(widget.AnimationRotation).(widget.RotationAnimation)
+	return f
+}
+
 var pointFrameCache map[*pointFrame]bool
 
 func getPointFrame() *pointFrame {
@@ -76,14 +157,4 @@ func getPointFrame() *pointFrame {
 
 func freePointFrame(f *pointFrame) {
 	pointFrameCache[f] = true
-}
-
-func newPointFrame() *pointFrame {
-	f := &pointFrame{}
-	f.frame = widget.CreateFrame(canvas)
-	f.frame.SetFrameStrata(widget.StrataMedium)
-	f.texture = f.frame.CreateTexture()
-	f.texture.SetAllPoints(f.frame)
-	f.texture.SetDrawLayer(widget.LayerArtwork, 0)
-	return f
 }

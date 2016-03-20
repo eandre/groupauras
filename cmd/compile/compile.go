@@ -94,12 +94,20 @@ func main() {
 		}
 	}
 
-	libsMetaPath := filepath.Join(filepath.Dir(os.Args[0]), "..", "..", "lualibs", "libs.json")
+	rootDir := filepath.Join(filepath.Dir(os.Args[0]), "..", "..")
+
+	// Copy libs
+	libsMetaPath := filepath.Join(rootDir, "lualibs", "libs.json")
 	tocPaths, err := CopyLibs(libsMetaPath, *output)
 	if err != nil {
 		log.Fatalf("Could not copy lualibs: %v", err)
 	}
 	filenames = append(tocPaths, filenames...)
+
+	// Copy assets
+	if _, err := CopyDir(filepath.Join(rootDir, "assets"), filepath.Join(*output, "assets"), nil); err != nil {
+		log.Fatalf("Could not copy assets: %v", err)
+	}
 
 	if err := writePackage(prog, *output, pkgName, filenames); err != nil {
 		log.Fatalf("Could not write package: %v", err)

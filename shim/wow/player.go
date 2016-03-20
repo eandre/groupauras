@@ -1,4 +1,4 @@
-package bridge
+package wow
 
 import "github.com/eandre/lunar/lua"
 

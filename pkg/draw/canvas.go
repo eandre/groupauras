@@ -1,22 +1,24 @@
 package draw
 
 import (
-	"github.com/eandre/groupauras/shim/bridge"
 	"github.com/eandre/groupauras/shim/hbd"
 	"github.com/eandre/groupauras/shim/luamath"
 	"github.com/eandre/groupauras/shim/widget"
+	"github.com/eandre/groupauras/shim/wow"
 )
 
 var RotateMap = true
+var ZoomScale float32 = 100
 
 var canvas widget.Frame
-var pixelsPerYard float32
+var maxSize float32
 
 func init() {
 	uiparent := widget.UIParent()
 	canvas = widget.CreateFrame(uiparent)
 	canvas.SetSize(uiparent.GetWidth(), uiparent.GetHeight())
 	canvas.SetPoint("CENTER", uiparent, "CENTER", 0, 0)
+	maxSize = widget.UIParent().GetHeight() * 0.48
 }
 
 func displayOffset(x, y hbd.WorldCoord, inst hbd.InstanceID) (dx, dy float32, show bool) {
@@ -28,7 +30,7 @@ func displayOffset(x, y hbd.WorldCoord, inst hbd.InstanceID) (dx, dy float32, sh
 	dx, dy = float32(x-px), float32(y-py)
 
 	if RotateMap {
-		facing := bridge.PlayerFacing()
+		facing := wow.PlayerFacing()
 		fsin := luamath.Sin(facing)
 		fcos := luamath.Cos(facing)
 		tx, ty := dx, dy
@@ -36,9 +38,6 @@ func displayOffset(x, y hbd.WorldCoord, inst hbd.InstanceID) (dx, dy float32, sh
 		dy = tx*fsin + ty*fcos
 	}
 
+	pixelsPerYard := maxSize / ZoomScale
 	return -dx * pixelsPerYard, dy * pixelsPerYard, true
-}
-
-func init() {
-	pixelsPerYard = widget.UIParent().GetHeight() * 0.48 / 100
 }
