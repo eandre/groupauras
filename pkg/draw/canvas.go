@@ -8,7 +8,7 @@ import (
 )
 
 var RotateMap = true
-var ZoomScale float32 = 50
+var ZoomScale float32 = 75
 
 var canvas widget.Frame
 var maxSize float32

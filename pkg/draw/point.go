@@ -44,13 +44,14 @@ func NewPoint(cfg *PointCfg) *Point {
 	if cfg.Duration != 0 {
 		p.SetDuration(cfg.Duration)
 	}
+	p.FadeIn()
 
 	markPointActive(p)
 	return p
 }
 
-func (p *Point) Free() {
-	p.frame.Free()
+func (p *Point) Free(skipAnimations bool) {
+	p.frame.Free(skipAnimations)
 	markPointInactive(p)
 	freePointFrame(p.frame)
 }
@@ -76,29 +77,41 @@ func (p *Point) SetDuration(secs float32) {
 	p.deadline = wow.GetTime() + secs
 }
 
+func (p *Point) FadeIn() {
+	p.frame.FadeIn()
+}
+
 func (p *Point) update() {
 	if p.deadline != 0 && wow.GetTime() > p.deadline {
-		p.Free()
+		p.Free(false)
 		return
 	}
 
 	x, y, inst := p.cfg.Pos.Pos()
 	dx, dy, show := displayOffset(x, y, inst)
 	if !show {
-		p.Free()
+		p.Free(false)
 		return
 	}
-	p.frame.frame.Show()
 
 	// TODO(eandre) Determine if we should update?
 	p.frame.SetPosition(dx, dy)
 }
 
 type pointFrame struct {
-	frame            widget.Frame
+	frame widget.Frame
+
 	texture          widget.Texture
 	repeatAnimations widget.AnimationGroup
 	rotate           widget.RotationAnimation
+
+	fadeInAnimations widget.AnimationGroup
+	scaleOut         widget.ScaleAnimation
+	fadeIn           widget.AlphaAnimation
+	scaleIn          widget.ScaleAnimation
+
+	fadeOutAnimations widget.AnimationGroup
+	fadeOut           widget.AlphaAnimation
 
 	texDef *textureDef // may be nil
 }
@@ -150,9 +163,22 @@ func (f *pointFrame) Reset() {
 	f.repeatAnimations.Stop()
 }
 
-func (f *pointFrame) Free() {
-	f.frame.Hide()
-	f.frame.StopAnimating()
+func (f *pointFrame) Free(skipAnimations bool) {
+	if skipAnimations {
+		f.frame.Hide()
+		f.frame.StopAnimating()
+	} else {
+		f.FadeOut()
+	}
+}
+
+func (f *pointFrame) FadeIn() {
+	f.frame.Show()
+	f.fadeInAnimations.Play()
+}
+
+func (f *pointFrame) FadeOut() {
+	f.fadeOutAnimations.Play()
 }
 
 func newPointFrame() *pointFrame {
@@ -166,6 +192,40 @@ func newPointFrame() *pointFrame {
 	f.repeatAnimations = f.frame.CreateAnimationGroup()
 	f.repeatAnimations.SetLooping(widget.LoopRepeat)
 	f.rotate = f.repeatAnimations.CreateAnimation(widget.AnimationRotation).(widget.RotationAnimation)
+
+	// Fade in animations
+	f.fadeInAnimations = f.frame.CreateAnimationGroup()
+	f.scaleOut = f.fadeInAnimations.CreateAnimation(widget.AnimationScale).(widget.ScaleAnimation)
+	f.scaleOut.SetScale(1.5, 1.5)
+	f.scaleOut.SetOrder(1)
+
+	fadeInState := &animationState{}
+	f.fadeIn = f.fadeInAnimations.CreateAnimation(widget.AnimationAlpha).(widget.AlphaAnimation)
+	f.fadeIn.SetDuration(0.35)
+	f.fadeIn.SetScript("OnPlay", func(anim widget.AlphaAnimation) {
+		fadeInState.OnLoad(anim)
+		f.fadeOutAnimations.Stop()
+	})
+	f.fadeIn.SetScript("OnUpdate", fadeInState.Alpha)
+	f.fadeIn.SetScript("OnStop", fadeInState.FullOpacity)
+	f.fadeIn.SetOrder(2)
+
+	f.scaleIn = f.fadeInAnimations.CreateAnimation(widget.AnimationScale).(widget.ScaleAnimation)
+	f.scaleIn.SetDuration(0.35)
+	f.scaleIn.SetScale(1/1.5, 1/1.5)
+	f.scaleIn.SetOrder(2)
+
+	// Fade out animations
+	fadeOutState := &animationState{}
+	f.fadeOutAnimations = f.frame.CreateAnimationGroup()
+	f.fadeOut = f.fadeOutAnimations.CreateAnimation(widget.AnimationAlpha).(widget.AlphaAnimation)
+	f.fadeOut.SetChange(-1)
+	f.fadeOut.SetDuration(0.25)
+	f.fadeOut.SetScript("OnFinished", fadeOutState.HideParent)
+	f.fadeOutAnimations.SetScript("OnPlay", func() {
+		f.fadeInAnimations.Stop()
+	})
+
 	return f
 }
 
