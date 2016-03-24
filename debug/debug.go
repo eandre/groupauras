@@ -19,16 +19,22 @@ func onWorldEnter(event string, args []interface{}) {
 		println("Error:", err.Error())
 		return
 	}
-	println("Compiled aura:", ca.Aura.Name)
 
 	t := trigger.NewWatcher()
 	t.Add(ca)
 
 	Point = draw.NewPoint(&draw.PointCfg{
 		Pos:           draw.StaticPlayerPosition(),
-		Texture:       "diamond",
+		Texture:       "timer",
+		SizeYards:     40,
 		RotateDegrees: 360,
 		RotateSpeed:   5,
+	})
+
+	draw.NewPoint(&draw.PointCfg{
+		Pos:        draw.PlayerPosition(),
+		Texture:    "diamond",
+		SizePixels: 5,
 	})
 }
 

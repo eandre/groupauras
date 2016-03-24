@@ -8,7 +8,7 @@ import (
 )
 
 var RotateMap = true
-var ZoomScale float32 = 100
+var ZoomScale float32 = 50
 
 var canvas widget.Frame
 var maxSize float32
@@ -38,6 +38,10 @@ func displayOffset(x, y hbd.WorldCoord, inst hbd.InstanceID) (dx, dy float32, sh
 		dy = tx*fsin + ty*fcos
 	}
 
-	pixelsPerYard := maxSize / ZoomScale
-	return -dx * pixelsPerYard, dy * pixelsPerYard, true
+	ppy := pixelsPerYard()
+	return -dx * ppy, dy * ppy, true
+}
+
+func pixelsPerYard() float32 {
+	return maxSize / ZoomScale
 }

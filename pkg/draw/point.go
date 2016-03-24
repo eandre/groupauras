@@ -9,6 +9,11 @@ type PointCfg struct {
 	Pos     Position
 	Texture string
 
+	// One of SizeYards and SizePixels must be set.
+	// SizeYards takes precedence if both are set.
+	SizeYards  float32
+	SizePixels int
+
 	// If set, the texture will rotate
 	RotateDegrees float32
 	RotateSpeed   float32
@@ -31,7 +36,7 @@ func NewPoint(cfg *PointCfg) *Point {
 		frame: getPointFrame(),
 	}
 	p.SetTexture(cfg.Texture)
-	p.frame.frame.SetSize(20, 20)
+	p.SetSize(cfg.SizeYards, cfg.SizePixels)
 
 	if cfg.RotateSpeed != 0 {
 		p.Rotate(cfg.RotateDegrees, cfg.RotateSpeed)
@@ -56,6 +61,15 @@ func (p *Point) Rotate(degrees, speed float32) {
 
 func (p *Point) SetTexture(texture string) {
 	p.frame.SetTexture(texture)
+}
+
+func (p *Point) SetSize(sizeYards float32, sizePixels int) {
+	if sizeYards != 0 {
+		// Multiply by two since it's a radius
+		p.frame.SetSize(sizeYards * pixelsPerYard() * 2)
+	} else {
+		p.frame.SetSize(float32(sizePixels))
+	}
 }
 
 func (p *Point) SetDuration(secs float32) {
@@ -85,6 +99,8 @@ type pointFrame struct {
 	texture          widget.Texture
 	repeatAnimations widget.AnimationGroup
 	rotate           widget.RotationAnimation
+
+	texDef *textureDef // may be nil
 }
 
 func (f *pointFrame) SetTexture(texture string) {
@@ -98,6 +114,14 @@ func (f *pointFrame) SetTexture(texture string) {
 		f.texture.SetTexCoord(0, 1, 0, 1)
 		f.texture.SetBlendMode(widget.BlendBlend)
 	}
+	f.texDef = entry
+}
+
+func (f *pointFrame) SetSize(pixels float32) {
+	if f.texDef != nil {
+		pixels *= f.texDef.SizeScalar
+	}
+	f.frame.SetSize(pixels, pixels)
 }
 
 func (f *pointFrame) SetPosition(dx, dy float32) {
