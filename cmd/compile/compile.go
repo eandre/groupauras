@@ -140,6 +140,7 @@ func writePackage(prog *loader.Program, root, pkgName string, filenames []string
 	var tw tocWriter
 	tw.AddKey("Interface", "60200")
 	tw.AddKey("Title", "Group Auras")
+	tw.AddKey("SavedVariables", "GroupAurasDB")
 	tw.AddFile("_prelude.lua")
 	for _, fn := range filenames {
 		tw.AddFile(fn)

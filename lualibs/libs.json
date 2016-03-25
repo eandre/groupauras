@@ -1,7 +1,32 @@
 {
 	"libs": [
-		"LibStub",
-		"CallbackHandler-1.0",
-		"HereBeDragons-1.0"
+		{
+            "path": "LibStub",
+            "embeds": ["*.lua"]
+        },
+        {
+		    "path": "CallbackHandler-1.0",
+            "embeds": ["*.xml"]
+        },
+        {
+		    "path": "HereBeDragons-1.0",
+            "embeds": ["*.lua"]
+        },
+        {
+		    "path": "AceDB-3.0",
+            "embeds": ["*.xml"]
+        },
+        {
+		    "path": "AceGUI-3.0",
+            "embeds": ["*.xml"]
+        },
+        {
+		    "path": "AceGUI-3.0",
+            "embeds": ["*.xml"]
+        },
+        {
+		    "path": "AceConfig-3.0",
+            "embeds": ["*.xml"]
+        }
 	]
 }
