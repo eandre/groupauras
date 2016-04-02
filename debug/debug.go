@@ -25,23 +25,6 @@ var defaultConfig = &Config{
 
 var DB *Config
 
-var CoreOptions = &acecfg.Group{
-	Name: "General",
-	Children: map[string]acecfg.Option{
-		"general": &acecfg.Group{
-			Name: "General Options",
-			Children: map[string]acecfg.Option{
-				"rotateMap": &acecfg.Toggle{
-					Name: "Rotate Map",
-					Desc: "Rotates the map around you as you move.",
-					Get:  func(*acecfg.Info) bool { return DB.profile.RotateMap },
-					Set:  func(info *acecfg.Info, value bool) { DB.profile.RotateMap = value },
-				},
-			},
-		},
-	},
-}
-
 var Point *draw.Point
 
 func onWorldEnter(event string, args []interface{}) {
