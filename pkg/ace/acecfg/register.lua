@@ -6,9 +6,7 @@ local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 
 _acecfg.RegisterOptionsTable = function(addonName, options, slashCmds)
-    local opts = _acecfg.serializeOption(options)
-    GA_OPTS = opts
-    AceConfig:RegisterOptionsTable(addonName, opts, slashCmds)
+    AceConfig:RegisterOptionsTable(addonName, options, slashCmds)
 end
 
 _acecfg.AddToBlizOptions = function(addonName, name)

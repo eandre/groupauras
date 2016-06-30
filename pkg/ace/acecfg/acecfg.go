@@ -1,107 +1,73 @@
 package acecfg
 
 type Option interface {
-	typ() string
-	data() map[string]interface{}
+	option()
 }
 
 type Info struct{}
 
-// HACK to get static typing without creating methods for each attribute
-type baseFieldsOption struct {
-	Name     string
-	Desc     string
-	Validate func(info *Info, value interface{}) string
-	Disabled func(info *Info, value interface{}) bool
-}
-
-func (o *baseFieldsOption) typ() string                  { return "" }
-func (o *baseFieldsOption) data() map[string]interface{} { return nil }
-func baseData(o *baseFieldsOption) map[string]interface{} {
-	return map[string]interface{}{
-		"type":     o.typ(),
-		"name":     o.Name,
-		"desc":     o.Desc,
-		"validate": o.Validate,
-		"disabled": o.Disabled,
-	}
-}
-
 type Group struct {
-	Name     string
-	Desc     string
-	Validate func(info *Info, value interface{}) string
-	Disabled func(info *Info, value interface{}) bool
+	Name  string `luaname:"name"`
+	Desc  string `luaname:"desc"`
+	Order int    `luaname:"order"`
+	Type  string `luaname:"type" luadefault:"\"group\""`
 
-	Children map[string]Option
+	Validate func(info *Info, value interface{}) string `luaname:"validate'`
+	Disabled func(info *Info, value interface{}) bool   `luaname:"disabled"`
+
+	Children map[string]Option `luaname:"args"`
 }
 
-func (g *Group) typ() string { return "group" }
-func (g *Group) data() map[string]interface{} {
-	args := map[string]interface{}{}
-	for key, opt := range g.Children {
-		args[key] = serializeOption(opt)
-	}
-	return map[string]interface{}{
-		"args": args,
-	}
-}
+func (g *Group) option() {}
 
 type Range struct {
-	Name     string
-	Desc     string
-	Validate func(info *Info, value interface{}) string
-	Disabled func(info *Info, value interface{}) bool
+	Name  string `luaname:"name"`
+	Desc  string `luaname:"desc"`
+	Order int    `luaname:"order"`
+	Type  string `luaname:"type" luadefault:"\"range\""`
 
-	Min       float32
-	Max       float32
-	SoftMin   float32
-	SoftMax   float32
-	Step      float32
-	BigStep   float32
-	IsPercent bool
-	Get       func(info *Info) float32
-	Set       func(info *Info, value float32)
+	Validate func(info *Info, value interface{}) string `luaname:"validate'`
+	Disabled func(info *Info, value interface{}) bool   `luaname:"disabled"`
+
+	Min       float32 `luaname:"min"`
+	Max       float32 `luaname:"max"`
+	SoftMin   float32 `luaname:"softMin"`
+	SoftMax   float32 `luaname:"softMax"`
+	Step      float32 `luaname:"step"`
+	BigStep   float32 `luaname:"bigStep"`
+	IsPercent bool    `luaname:"isPercent"`
+
+	Get func(info *Info) float32        `luaname:"min"`
+	Set func(info *Info, value float32) `luaname:"min"`
 }
 
-func (r *Range) typ() string { return "range" }
-func (r *Range) data() map[string]interface{} {
-	return map[string]interface{}{
-		"min":       r.Min,
-		"max":       r.Max,
-		"softMin":   r.SoftMin,
-		"softMax":   r.SoftMax,
-		"step":      r.Step,
-		"bigStep":   r.BigStep,
-		"get":       r.Get,
-		"set":       r.Set,
-		"isPercent": r.IsPercent,
-	}
-}
+func (r *Range) option() {}
 
 type Toggle struct {
-	Name     string
-	Desc     string
-	Validate func(info *Info, value interface{}) string
-	Disabled func(info *Info, value interface{}) bool
+	Name  string `luaname:"name"`
+	Desc  string `luaname:"desc"`
+	Order int    `luaname:"order"`
+	Type  string `luaname:"type" luadefault:"\"toggle\""`
 
-	Get func(info *Info) bool
-	Set func(info *Info, value bool)
+	Validate func(info *Info, value interface{}) string `luaname:"validate'`
+	Disabled func(info *Info, value interface{}) bool   `luaname:"disabled"`
+
+	Get func(info *Info) bool        `luaname:"get"`
+	Set func(info *Info, value bool) `luaname:"set"`
 }
 
-func (t *Toggle) typ() string { return "toggle" }
-func (t *Toggle) data() map[string]interface{} {
-	return map[string]interface{}{
-		"get": t.Get,
-		"set": t.Set,
-	}
+func (t *Toggle) option() {}
+
+type Button struct {
+	Name  string `luaname:"name"`
+	Desc  string `luaname:"desc"`
+	Order int    `luaname:"order"`
+	Type  string `luaname:"type" luadefault:"\"execute\""`
+
+	Validate func(info *Info, value interface{}) string `luaname:"validate'`
+	Disabled func(info *Info, value interface{}) bool   `luaname:"disabled"`
+
+	Func func(info *Info) `luaname:"func"`
 }
 
-func serializeOption(opt Option) map[string]interface{} {
-	o := opt.(*baseFieldsOption)
-	data := baseData(o)
-	for k, v := range opt.data() {
-		data[k] = v
-	}
-	return data
-}
+func (b *Button) option() {}

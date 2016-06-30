@@ -1,115 +1,71 @@
 package aura
 
-import "github.com/eandre/groupauras/shim/bridge"
+import "github.com/eandre/lunar-wow/pkg/luautil"
 
 type CompiledAura struct {
 	Aura     *Aura
-	Enables  map[string]func(aura *CompiledAura, event string, args []interface{}) bool
-	Disables map[string]func(aura *CompiledAura, event string, args []interface{}) bool
-	Active   bool
+	Enables  map[string]func(ca *CompiledAura, event string, args []interface{}) bool
+	Disables map[string]func(ca *CompiledAura, event string, args []interface{}) bool
 
 	// Relevant for activate auras
-	events       map[string]func(aura *CompiledAura, event string, args []interface{})
-	onUpdate     func(aura *CompiledAura, dt float32)
-	onActivate   func(aura *CompiledAura)
-	onDeactivate func(aura *CompiledAura)
+	Events       map[string]func(ca *CompiledAura, event string, args []interface{})
+	OnUpdate     func(ca *CompiledAura, dt float32)
+	OnActivate   func(ca *CompiledAura)
+	OnDeactivate func(ca *CompiledAura)
 }
 
-func (ca *CompiledAura) Activate() {
-	if ca.Active {
-		return
-	}
-	ca.Active = true
-
-	if ca.onActivate != nil {
-		ca.onActivate(ca)
-	}
-	if ca.onUpdate != nil {
-		bridge.RegisterUpdate(ca.doOnUpdate)
-	}
-	for event := range ca.events {
-		bridge.RegisterEvent(event, ca.onEvent)
-	}
-}
-
-func (ca *CompiledAura) Deactivate() {
-	if !ca.Active {
-		return
-	}
-	ca.Active = false
-
-	for event := range ca.events {
-		bridge.UnregisterEvent(event, ca.onEvent)
-	}
-	if ca.onUpdate != nil {
-		bridge.UnregisterUpdate(ca.doOnUpdate)
-	}
-	if ca.onDeactivate != nil {
-		ca.onDeactivate(ca)
-	}
-}
-
-func (ca *CompiledAura) onEvent(event string, args []interface{}) {
-	ca.events[event](ca, event, args)
-}
-
-func (ca *CompiledAura) doOnUpdate(dt float32) {
-	ca.onUpdate(ca, dt)
-}
-
-func Compile(aura *Aura) (*CompiledAura, error) {
-	ca := newCompiledAura(aura)
-
-	for event, src := range aura.Enables {
-		f, err := bridge.Eval(src)
+func Compile(rev *Aura) (*CompiledAura, error) {
+	ca := newCompiledAura(rev)
+	for event, src := range rev.Enables {
+		f, err := luautil.Eval(src)
 		if err != nil {
 			return nil, err
 		}
 		ca.Enables[event] = f.(func(*CompiledAura, string, []interface{}) bool)
 	}
-	for event, src := range aura.Disables {
-		f, err := bridge.Eval(src)
+	for event, src := range rev.Disables {
+		f, err := luautil.Eval(src)
 		if err != nil {
 			return nil, err
 		}
 		ca.Disables[event] = f.(func(*CompiledAura, string, []interface{}) bool)
 	}
-	for event, src := range aura.Events {
-		f, err := bridge.Eval(src)
+	for event, src := range rev.Events {
+		f, err := luautil.Eval(src)
 		if err != nil {
 			return nil, err
 		}
-		ca.events[event] = f.(func(*CompiledAura, string, []interface{}))
+		ca.Events[event] = f.(func(*CompiledAura, string, []interface{}))
 	}
-	if aura.OnUpdate != "" {
-		f, err := bridge.Eval(aura.OnUpdate)
+	if rev.OnUpdate != "" {
+		f, err := luautil.Eval(rev.OnUpdate)
 		if err != nil {
 			return nil, err
 		}
-		ca.onUpdate = f.(func(*CompiledAura, float32))
+		ca.OnUpdate = f.(func(*CompiledAura, float32))
 	}
-	if aura.OnActivate != "" {
-		f, err := bridge.Eval(aura.OnActivate)
+	if rev.OnActivate != "" {
+		f, err := luautil.Eval(rev.OnActivate)
 		if err != nil {
 			return nil, err
 		}
-		ca.onActivate = f.(func(*CompiledAura))
+		ca.OnActivate = f.(func(*CompiledAura))
 	}
-	if aura.OnDeactivate != "" {
-		f, err := bridge.Eval(aura.OnDeactivate)
+	if rev.OnDeactivate != "" {
+		f, err := luautil.Eval(rev.OnDeactivate)
 		if err != nil {
 			return nil, err
 		}
-		ca.onDeactivate = f.(func(*CompiledAura))
+		ca.OnDeactivate = f.(func(*CompiledAura))
 	}
 	return ca, nil
 }
 
-func newCompiledAura(aura *Aura) *CompiledAura {
+func newCompiledAura(rev *Aura) *CompiledAura {
 	return &CompiledAura{
-		Aura:     aura,
+		Aura:     rev,
 		Enables:  make(map[string]func(*CompiledAura, string, []interface{}) bool),
 		Disables: make(map[string]func(*CompiledAura, string, []interface{}) bool),
-		events:   make(map[string]func(*CompiledAura, string, []interface{})),
+		Events:   make(map[string]func(*CompiledAura, string, []interface{})),
 	}
 }

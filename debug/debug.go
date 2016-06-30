@@ -6,7 +6,7 @@ import (
 	"github.com/eandre/groupauras/pkg/ace/acecfg"
 	"github.com/eandre/groupauras/pkg/ace/acedb"
 	"github.com/eandre/groupauras/pkg/draw"
-	"github.com/eandre/groupauras/shim/bridge"
+	"github.com/eandre/lunar-wow/pkg/wow"
 )
 
 type profileConfig struct {
@@ -61,5 +61,5 @@ func onWorldEnter(event string, args []interface{}) {
 }
 
 func init() {
-	bridge.RegisterEvent("PLAYER_ENTERING_WORLD", onWorldEnter)
+	wow.RegisterEvent("PLAYER_ENTERING_WORLD", onWorldEnter)
 }

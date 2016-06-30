@@ -1,15 +1,19 @@
 package groupauras
 
-type profileConfig struct {
+import "github.com/eandre/groupauras/core/aura"
+
+type ProfileConfig struct {
 	RotateMap bool
+	Auras     []*aura.Aura
 }
 
 type Config struct {
-	profile profileConfig
+	profile ProfileConfig
 }
 
 var defaultConfig = &Config{
-	profile: profileConfig{
+	profile: ProfileConfig{
 		RotateMap: true,
+		Auras:     []*aura.Aura{},
 	},
 }

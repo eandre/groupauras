@@ -1,0 +1,17 @@
+{
+    "title": "GroupAuras",
+    "saved_variables": ["GroupAurasDB"],
+    "import_path": "github.com/eandre/groupauras",
+    "libs": [
+		{"path": "lualibs/LibStub", "embeds": ["*.lua"]},
+        {"path": "lualibs/CallbackHandler-1.0", "embeds": ["*.xml"]},
+        {"path": "lualibs/HereBeDragons-1.0", "embeds": ["*.lua"]},
+        {"path": "lualibs/AceAddon-3.0", "embeds": ["*.xml"]},
+        {"path": "lualibs/AceConsole-3.0", "embeds": ["*.xml"]},
+        {"path": "lualibs/AceDB-3.0", "embeds": ["*.xml"]},
+        {"path": "lualibs/AceGUI-3.0", "embeds": ["*.xml"]},
+        {"path": "lualibs/AceGUI-3.0", "embeds": ["*.xml"]},
+        {"path": "lualibs/AceConfig-3.0", "embeds": ["*.xml"]},
+        {"path": "lualibs/AceComm-3.0", "embeds": ["*.xml"]}
+	]
+}

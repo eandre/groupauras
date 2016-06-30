@@ -1,21 +1,22 @@
 package aura
 
-type Aura struct {
-	Name     string
-	Enables  map[string]string
-	Disables map[string]string
+// Note that these types cannot have methods; due to how we store
+// them in SavedVariables we cannot easily deserialize them to
+// proper objects with metatables.
 
+type Aura struct {
+	ID       string
+	Name     string
+	Author   string
+	Revision int
+
+	Enables      map[string]string
+	Disables     map[string]string
 	Events       map[string]string
 	OnUpdate     string
 	OnActivate   string
 	OnDeactivate string
-}
 
-func New(name string) *Aura {
-	return &Aura{
-		Name:     name,
-		Enables:  make(map[string]string),
-		Disables: make(map[string]string),
-		Events:   make(map[string]string),
-	}
+	Raw string
+	Sig string
 }
