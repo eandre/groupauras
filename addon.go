@@ -9,6 +9,7 @@ import (
 	"github.com/eandre/groupauras/pkg/ace/acedb"
 	"github.com/eandre/lunar-shim/ace/aceaddon"
 )
+import _ "github.com/eandre/groupauras/debug"
 
 var (
 	DB      *Config

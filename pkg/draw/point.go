@@ -1,8 +1,8 @@
 package draw
 
 import (
-	"github.com/eandre/groupauras/shim/widget"
-	"github.com/eandre/groupauras/shim/wow"
+	"github.com/eandre/lunar-wow/pkg/widget"
+	"github.com/eandre/lunar-wow/pkg/wow"
 )
 
 type PointCfg struct {
@@ -27,7 +27,7 @@ type Point struct {
 	cfg   *PointCfg
 	frame *pointFrame
 
-	deadline float32
+	deadline wow.Time
 }
 
 func NewPoint(cfg *PointCfg) *Point {
@@ -74,7 +74,7 @@ func (p *Point) SetSize(sizeYards float32, sizePixels int) {
 }
 
 func (p *Point) SetDuration(secs float32) {
-	p.deadline = wow.GetTime() + secs
+	p.deadline = wow.GetTime() + wow.Time(secs)
 }
 
 func (p *Point) FadeIn() {

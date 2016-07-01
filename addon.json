@@ -12,6 +12,7 @@
         {"path": "lualibs/AceGUI-3.0", "embeds": ["*.xml"]},
         {"path": "lualibs/AceGUI-3.0", "embeds": ["*.xml"]},
         {"path": "lualibs/AceConfig-3.0", "embeds": ["*.xml"]},
+        {"path": "lualibs/AceSerializer-3.0", "embeds": ["*.xml"]},
         {"path": "lualibs/AceComm-3.0", "embeds": ["*.xml"]}
 	]
 }

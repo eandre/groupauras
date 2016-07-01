@@ -1,6 +1,9 @@
 package draw
 
-import "github.com/eandre/groupauras/shim/hbd"
+import (
+	"github.com/eandre/lunar-shim/hbd"
+	"github.com/eandre/lunar-wow/pkg/wow"
+)
 
 type Position interface {
 	Static() bool
@@ -11,7 +14,7 @@ func PlayerPosition() Position {
 	return &playerPosition{}
 }
 
-func UnitPosition(unitID string) Position {
+func UnitPosition(unitID wow.UnitID) Position {
 	return &unitPosition{unitID}
 }
 
@@ -20,7 +23,7 @@ func StaticPlayerPosition() Position {
 	return &staticPosition{x, y, inst}
 }
 
-func StaticUnitPosition(unitID string) Position {
+func StaticUnitPosition(unitID wow.UnitID) Position {
 	x, y, inst := hbd.UnitWorldPosition(unitID)
 	return &staticPosition{x, y, inst}
 }
@@ -49,7 +52,7 @@ func (pp *playerPosition) Pos() (x, y hbd.WorldCoord, inst hbd.InstanceID) {
 }
 
 type unitPosition struct {
-	unitID string
+	unitID wow.UnitID
 }
 
 func (up *unitPosition) Static() bool {

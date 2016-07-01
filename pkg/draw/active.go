@@ -1,11 +1,11 @@
 package draw
 
 import (
-	"github.com/eandre/groupauras/shim/bridge"
-	"github.com/eandre/groupauras/shim/luamath"
+	"github.com/eandre/lunar-wow/pkg/luamath"
+	"github.com/eandre/lunar-wow/pkg/wow"
 )
 
-var activePoints map[*Point]bool
+var activePoints = make(map[*Point]bool)
 
 var updateInterval float32 = 1 / 60.0
 var updateTotal float32 = 0
@@ -22,7 +22,7 @@ func onUpdate(dt float32) {
 	updateTotal += dt
 	if updateTotal > updateInterval {
 		steps := luamath.Floor(updateTotal / updateInterval)
-		elapsed := updateInterval * steps
+		elapsed := updateInterval * float32(steps)
 		updateTotal -= elapsed
 
 		for p := range activePoints {
@@ -32,5 +32,5 @@ func onUpdate(dt float32) {
 }
 
 func init() {
-	bridge.RegisterUpdate(onUpdate)
+	wow.RegisterUpdate(onUpdate)
 }

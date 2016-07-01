@@ -1,6 +1,6 @@
 package draw
 
-import "github.com/eandre/groupauras/shim/widget"
+import "github.com/eandre/lunar-wow/pkg/widget"
 
 type animationState struct {
 	regionParent widget.VisibleRegion

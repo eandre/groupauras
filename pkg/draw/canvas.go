@@ -1,10 +1,10 @@
 package draw
 
 import (
-	"github.com/eandre/groupauras/shim/hbd"
-	"github.com/eandre/groupauras/shim/luamath"
-	"github.com/eandre/groupauras/shim/widget"
-	"github.com/eandre/groupauras/shim/wow"
+	"github.com/eandre/lunar-shim/hbd"
+	"github.com/eandre/lunar-wow/pkg/luamath"
+	"github.com/eandre/lunar-wow/pkg/widget"
+	"github.com/eandre/lunar-wow/pkg/wow"
 )
 
 var RotateMap = true
