@@ -1,13 +1,17 @@
 package draw
 
 import (
+	"github.com/eandre/groupauras/pkg/context"
 	"github.com/eandre/lunar-wow/pkg/widget"
-	"github.com/eandre/lunar-wow/pkg/wow"
 )
 
 type PointCfg struct {
-	Pos     Position
-	Texture string
+	// If non-nil, when ctx is cancelled, the point will be freed
+	Ctx         context.Ctx
+	Pos         Position
+	Texture     string
+	Text        string
+	VertexColor []float32
 
 	// One of SizeYards and SizePixels must be set.
 	// SizeYards takes precedence if both are set.
@@ -18,31 +22,35 @@ type PointCfg struct {
 	RotateDegrees float32
 	RotateSpeed   float32
 
-	// Number of seconds the point will exist for.
-	// If zero, it will never expire.
-	Duration float32
+	DrawLayer widget.DrawLayer
 }
 
 type Point struct {
+	ctx   context.Ctx
 	cfg   *PointCfg
 	frame *pointFrame
-
-	deadline wow.Time
 }
 
 func NewPoint(cfg *PointCfg) *Point {
+	ctx := cfg.Ctx
+	if ctx == nil {
+		ctx = context.Base
+	}
 	p := &Point{
+		ctx:   ctx,
 		cfg:   cfg,
 		frame: getPointFrame(),
 	}
-	p.SetTexture(cfg.Texture)
+	p.SetTexture(cfg.Texture, cfg.DrawLayer)
 	p.SetSize(cfg.SizeYards, cfg.SizePixels)
+	p.SetText(cfg.Text)
+
+	if c := cfg.VertexColor; len(c) != 0 {
+		p.SetVertexColor(c[0], c[1], c[2], c[3])
+	}
 
 	if cfg.RotateSpeed != 0 {
 		p.Rotate(cfg.RotateDegrees, cfg.RotateSpeed)
-	}
-	if cfg.Duration != 0 {
-		p.SetDuration(cfg.Duration)
 	}
 	p.FadeIn()
 
@@ -60,8 +68,19 @@ func (p *Point) Rotate(degrees, speed float32) {
 	p.frame.Rotate(degrees, speed)
 }
 
-func (p *Point) SetTexture(texture string) {
-	p.frame.SetTexture(texture)
+func (p *Point) SetTexture(texture string, layer widget.DrawLayer) {
+	if layer == "" {
+		layer = widget.LayerArtwork
+	}
+	p.frame.SetTexture(texture, layer)
+}
+
+func (p *Point) SetText(text string) {
+	p.frame.SetText(text)
+}
+
+func (p *Point) SetVertexColor(r, g, b, a float32) {
+	p.frame.texture.SetVertexColor(r, g, b, a)
 }
 
 func (p *Point) SetSize(sizeYards float32, sizePixels int) {
@@ -73,16 +92,12 @@ func (p *Point) SetSize(sizeYards float32, sizePixels int) {
 	}
 }
 
-func (p *Point) SetDuration(secs float32) {
-	p.deadline = wow.GetTime() + wow.Time(secs)
-}
-
 func (p *Point) FadeIn() {
 	p.frame.FadeIn()
 }
 
 func (p *Point) update() {
-	if p.deadline != 0 && wow.GetTime() > p.deadline {
+	if p.ctx.Cancelled() {
 		p.Free(false)
 		return
 	}
@@ -90,7 +105,7 @@ func (p *Point) update() {
 	x, y, inst := p.cfg.Pos.Pos()
 	dx, dy, show := displayOffset(x, y, inst)
 	if !show {
-		p.Free(false)
+		p.Free(false) // should we just hide instead?
 		return
 	}
 
@@ -100,6 +115,8 @@ func (p *Point) update() {
 
 type pointFrame struct {
 	frame widget.Frame
+
+	text widget.FontString
 
 	texture          widget.Texture
 	repeatAnimations widget.AnimationGroup
@@ -116,7 +133,7 @@ type pointFrame struct {
 	texDef *textureDef // may be nil
 }
 
-func (f *pointFrame) SetTexture(texture string) {
+func (f *pointFrame) SetTexture(texture string, layer widget.DrawLayer) {
 	entry := textureMap[texture]
 	if entry != nil {
 		f.texture.SetTexture(entry.Texture)
@@ -127,7 +144,12 @@ func (f *pointFrame) SetTexture(texture string) {
 		f.texture.SetTexCoord(0, 1, 0, 1)
 		f.texture.SetBlendMode(widget.BlendBlend)
 	}
+	f.texture.SetDrawLayer(layer, 0)
 	f.texDef = entry
+}
+
+func (f *pointFrame) SetText(text string) {
+	f.text.SetText(text)
 }
 
 func (f *pointFrame) SetSize(pixels float32) {
@@ -161,12 +183,14 @@ func (f *pointFrame) Reset() {
 	f.frame.Show()
 	f.frame.SetAlpha(1)
 	f.repeatAnimations.Stop()
+	f.texture.SetVertexColor(1, 1, 1, 1)
 }
 
 func (f *pointFrame) Free(skipAnimations bool) {
 	if skipAnimations {
 		f.frame.Hide()
 		f.frame.StopAnimating()
+		f.text.Hide()
 	} else {
 		f.FadeOut()
 	}
@@ -179,12 +203,19 @@ func (f *pointFrame) FadeIn() {
 
 func (f *pointFrame) FadeOut() {
 	f.fadeOutAnimations.Play()
+	f.text.Hide()
 }
 
 func newPointFrame() *pointFrame {
 	f := &pointFrame{}
 	f.frame = widget.CreateFrame(canvas)
 	f.frame.SetFrameStrata(widget.StrataMedium)
+
+	f.text = widget.UIParent().CreateFontString()
+	f.text.SetFontObject("GameFontNormal")
+	f.text.SetPoint("CENTER", f.frame, "CENTER", 0, 10)
+	f.text.SetTextColor(1, 1, 1, 1)
+
 	f.texture = f.frame.CreateTexture()
 	f.texture.SetAllPoints(f.frame)
 	f.texture.SetDrawLayer(widget.LayerArtwork, 0)
@@ -219,7 +250,7 @@ func newPointFrame() *pointFrame {
 	fadeOutState := &animationState{}
 	f.fadeOutAnimations = f.frame.CreateAnimationGroup()
 	f.fadeOut = f.fadeOutAnimations.CreateAnimation(widget.AnimationAlpha).(widget.AlphaAnimation)
-	f.fadeOut.SetChange(-1)
+	//f.fadeOut.SetChange(-1)
 	f.fadeOut.SetDuration(0.25)
 	f.fadeOut.SetScript("OnFinished", fadeOutState.HideParent)
 	f.fadeOutAnimations.SetScript("OnPlay", func() {
@@ -229,11 +260,12 @@ func newPointFrame() *pointFrame {
 	return f
 }
 
-var pointFrameCache map[*pointFrame]bool
+var pointFrameCache = make(map[*pointFrame]bool)
 
 func getPointFrame() *pointFrame {
 	for f := range pointFrameCache {
 		delete(pointFrameCache, f)
+		f.Reset()
 		return f
 	}
 	return newPointFrame()

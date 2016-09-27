@@ -2,6 +2,7 @@
     "title": "GroupAuras",
     "saved_variables": ["GroupAurasDB"],
     "import_path": "github.com/eandre/groupauras",
+    "assets": "assets",
     "libs": [
 		{"path": "lualibs/LibStub", "embeds": ["*.lua"]},
         {"path": "lualibs/CallbackHandler-1.0", "embeds": ["*.xml"]},

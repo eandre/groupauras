@@ -1,8 +1,9 @@
 package debug
 
 import (
+	"github.com/eandre/groupauras/auras/emerald_nightmare/nythendra"
+	"github.com/eandre/groupauras/pkg/context"
 	"github.com/eandre/groupauras/pkg/draw"
-	"github.com/eandre/lunar-wow/pkg/wow"
 )
 
 var Point *draw.Point
@@ -18,11 +19,14 @@ func onWorldEnter(event string, args []interface{}) {
 
 	draw.NewPoint(&draw.PointCfg{
 		Pos:        draw.PlayerPosition(),
-		Texture:    "diamond",
-		SizePixels: 5,
+		Texture:    "star",
+		SizePixels: 10,
 	})
+
+	nythendra.Enable(nil)
 }
 
 func init() {
-	wow.RegisterEvent("PLAYER_ENTERING_WORLD", onWorldEnter)
+	//wow.RegisterEvent("PLAYER_ENTERING_WORLD", onWorldEnter)
+	nythendra.Enable(context.Base)
 }

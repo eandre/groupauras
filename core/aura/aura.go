@@ -20,3 +20,13 @@ type Aura struct {
 	Raw string
 	Sig string
 }
+
+type NewAura struct {
+	ID       string
+	Name     string
+	Author   string
+	Revision int
+
+	Enables  map[string]string
+	Disables map[string]string
+}

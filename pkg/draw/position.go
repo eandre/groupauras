@@ -1,7 +1,9 @@
 package draw
 
 import (
+	"github.com/eandre/groupauras/pkg/raidutil"
 	"github.com/eandre/lunar-shim/hbd"
+	"github.com/eandre/lunar-wow/pkg/luastrings"
 	"github.com/eandre/lunar-wow/pkg/wow"
 )
 
@@ -15,7 +17,17 @@ func PlayerPosition() Position {
 }
 
 func UnitPosition(unitID wow.UnitID) Position {
-	return &unitPosition{unitID}
+	// Raid unit ids are not stable over time; if we have
+	// a raid unit id, convert it to a guid first.
+	if luastrings.HasPrefix(string(unitID), "raid") {
+		guid := wow.UnitGUID(unitID)
+		return &guidPosition{guid}
+	}
+	return &unitIDPosition{unitID}
+}
+
+func GUIDPosition(guid wow.GUID) Position {
+	return &guidPosition{guid}
 }
 
 func StaticPlayerPosition() Position {
@@ -51,14 +63,30 @@ func (pp *playerPosition) Pos() (x, y hbd.WorldCoord, inst hbd.InstanceID) {
 	return hbd.PlayerWorldPosition()
 }
 
-type unitPosition struct {
+type unitIDPosition struct {
 	unitID wow.UnitID
 }
 
-func (up *unitPosition) Static() bool {
+func (up *unitIDPosition) Static() bool {
 	return false
 }
 
-func (up *unitPosition) Pos() (x, y hbd.WorldCoord, inst hbd.InstanceID) {
+func (up *unitIDPosition) Pos() (x, y hbd.WorldCoord, inst hbd.InstanceID) {
 	return hbd.UnitWorldPosition(up.unitID)
+}
+
+type guidPosition struct {
+	guid wow.GUID
+}
+
+func (up *guidPosition) Static() bool {
+	return false
+}
+
+func (up *guidPosition) Pos() (x, y hbd.WorldCoord, inst hbd.InstanceID) {
+	uid, ok := raidutil.GUIDToUnitID(up.guid)
+	if !ok {
+		return 0, 0, 0
+	}
+	return hbd.UnitWorldPosition(uid)
 }
