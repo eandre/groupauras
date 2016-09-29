@@ -17,9 +17,9 @@ func PlayerPosition() Position {
 }
 
 func UnitPosition(unitID wow.UnitID) Position {
-	// Raid unit ids are not stable over time; if we have
-	// a raid unit id, convert it to a guid first.
-	if luastrings.HasPrefix(string(unitID), "raid") {
+	// Group unit ids are not stable over time; if we have
+	// a group unit id, convert it to a guid first.
+	if luastrings.HasPrefix(string(unitID), "raid") || luastrings.HasPrefix(string(unitID), "party") {
 		guid := wow.UnitGUID(unitID)
 		return &guidPosition{guid}
 	}

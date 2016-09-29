@@ -184,6 +184,7 @@ func (f *pointFrame) Reset() {
 	f.frame.SetAlpha(1)
 	f.repeatAnimations.Stop()
 	f.texture.SetVertexColor(1, 1, 1, 1)
+	f.text.Show()
 }
 
 func (f *pointFrame) Free(skipAnimations bool) {
@@ -237,6 +238,8 @@ func newPointFrame() *pointFrame {
 		fadeInState.OnLoad(anim)
 		f.fadeOutAnimations.Stop()
 	})
+	f.fadeIn.SetFromAlpha(0)
+	f.fadeIn.SetToAlpha(1)
 	f.fadeIn.SetScript("OnUpdate", fadeInState.Alpha)
 	f.fadeIn.SetScript("OnStop", fadeInState.FullOpacity)
 	f.fadeIn.SetOrder(2)
@@ -250,7 +253,8 @@ func newPointFrame() *pointFrame {
 	fadeOutState := &animationState{}
 	f.fadeOutAnimations = f.frame.CreateAnimationGroup()
 	f.fadeOut = f.fadeOutAnimations.CreateAnimation(widget.AnimationAlpha).(widget.AlphaAnimation)
-	//f.fadeOut.SetChange(-1)
+	f.fadeOut.SetFromAlpha(1)
+	f.fadeOut.SetToAlpha(0)
 	f.fadeOut.SetDuration(0.25)
 	f.fadeOut.SetScript("OnFinished", fadeOutState.HideParent)
 	f.fadeOutAnimations.SetScript("OnPlay", func() {

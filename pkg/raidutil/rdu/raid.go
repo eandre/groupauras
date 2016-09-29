@@ -10,27 +10,22 @@ import (
 	"github.com/eandre/lunar-wow/pkg/wow"
 )
 
-var groupMemberSources = 0
-
 func ShowGroupMembers(ctx context.Ctx) {
-	groupMemberSources += 1
 	doShowGroupMembers()
 
-	ctx.OnCancel(nil, func(c context.Ctx, _ interface{}) {
-		groupMemberSources -= 1
-		if groupMemberSources <= 0 {
-			doHideGroupMembers()
-			groupMemberSources = 0
-		}
+	ctx.OnCancel(nil, func(_ context.Ctx, _ interface{}) {
+		doHideGroupMembers()
 	})
 }
 
 type drawingMember struct {
-	Point *draw.Point
-	GUID  wow.GUID
+	Point   *draw.Point
+	GUID    wow.GUID
+	Counter int
 }
 
-var currMembers []*drawingMember
+var currMembers = make(map[wow.GUID]*drawingMember)
+var memberCount = 0 // prevent quadratic complexity
 
 var timer float32 = 0
 
@@ -59,46 +54,73 @@ func updateTextures(dt float32) {
 	}
 }
 
-func doShowGroupMembers() {
-	wow.RegisterUpdate(updateTextures)
-	if wow.IsInRaid() {
-		num := wow.GetNumGroupMembers()
-		for i := 1; i <= num; i++ {
-			uid := wow.UnitID("raid" + luastrings.ToString(i))
-			r, g, b := classutil.Color(uid)
-			pt := draw.NewPoint(&draw.PointCfg{
-				Pos:         draw.UnitPosition(uid),
-				Texture:     "party",
-				VertexColor: []float32{r, g, b, 1},
-				SizeYards:   1,
-				DrawLayer:   widget.LayerOverlay,
-			})
-			currMembers = append(currMembers, &drawingMember{
-				Point: pt,
-				GUID:  wow.UnitGUID(uid),
-			})
+func addMember(guid wow.GUID) {
+	if dm := currMembers[guid]; dm != nil {
+		dm.Counter += 1
+		return
+	}
+
+	pt := draw.NewPoint(&draw.PointCfg{
+		Pos:         draw.GUIDPosition(guid),
+		Texture:     "party",
+		VertexColor: []float32{1, 1, 1, 1}, // filled in by update
+		SizeYards:   1,
+		DrawLayer:   widget.LayerOverlay,
+	})
+	currMembers[guid] = &drawingMember{
+		Point:   pt,
+		GUID:    guid,
+		Counter: 1,
+	}
+	memberCount += 1
+
+	if memberCount == 1 {
+		wow.RegisterUpdate(updateTextures)
+	}
+}
+
+func removeMember(guid wow.GUID) {
+	if dm := currMembers[guid]; dm != nil {
+		dm.Counter -= 1
+		if dm.Counter <= 0 {
+			dm.Point.Free(false)
+			delete(currMembers, guid)
+			memberCount -= 1
 		}
-	} else {
-		// If we're not in a raid group, still draw the player
-		r, g, b := classutil.Color("player")
-		pt := draw.NewPoint(&draw.PointCfg{
-			Pos:         draw.UnitPosition("player"),
-			Texture:     "party",
-			VertexColor: []float32{r, g, b, 1},
-			SizeYards:   1,
-			DrawLayer:   widget.LayerOverlay,
-		})
-		currMembers = append(currMembers, &drawingMember{
-			Point: pt,
-			GUID:  wow.UnitGUID("player"),
-		})
+	}
+
+	if memberCount == 0 {
+		wow.UnregisterUpdate(updateTextures)
+	}
+}
+
+func ShowUnit(ctx context.Ctx, guid wow.GUID) {
+	addMember(guid)
+	ctx.OnCancel(nil, func(_ context.Ctx, _ interface{}) {
+		removeMember(guid)
+	})
+}
+
+func doShowGroupMembers() {
+	inRaid := wow.IsInRaid()
+	prefix := "party"
+	if inRaid {
+		prefix = "raid"
+	}
+
+	num := wow.GetNumGroupMembers()
+	for i := 1; i <= num; i++ {
+		uid := wow.UnitID(prefix + luastrings.ToString(i))
+		if !inRaid && i == num {
+			uid = "player"
+		}
+		guid := wow.UnitGUID(uid)
+		addMember(guid)
 	}
 }
 
 func doHideGroupMembers() {
-	wow.UnregisterUpdate(updateTextures)
 	for _, dm := range currMembers {
-		dm.Point.Free(false)
+		removeMember(dm.GUID)
 	}
-	currMembers = []*drawingMember{}
 }

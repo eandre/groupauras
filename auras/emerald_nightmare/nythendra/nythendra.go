@@ -13,13 +13,15 @@ import (
 
 const (
 	InfestedMindID             = 61295 // Riptide, real: 205043
-	InfestedMindInterrupters   = 2     // need 2 interrupters
+	InfestedMindInterrupters   = 1     // need 2 interrupters
 	InfestedMindInterruptRange = 10
+	VolatileRotID              = 2645 // Ghost Wolf, real: XXXXX
 )
 
 type Nythendra struct {
 	Ctx          context.Ctx
 	InfestedMind *auratrack.Tracker
+	VolatileRot  *auratrack.Tracker
 	dt           float32
 }
 
@@ -73,6 +75,18 @@ func Enable(ctx context.Ctx) *Nythendra {
 			}
 		},
 	})
+	n.VolatileRot = auratrack.New(ctx, VolatileRotID, &auratrack.Cfg{
+		Add: func(target *auratrack.Target) {
+			draw.NewPoint(&draw.PointCfg{
+				Ctx:         target.Ctx,
+				Pos:         draw.GUIDPosition(target.GUID),
+				Texture:     "falloffcircle",
+				VertexColor: []float32{1, 0.25, 0.25, 0.75},
+				SizeYards:   50,
+			})
+			rdu.ShowUnit(target.Ctx, target.GUID)
+		},
+	})
 
 	return n
 }
@@ -87,5 +101,5 @@ func hasInterrupt(guid wow.GUID) bool {
 		println("groupauras: No spec found for id", data.SpecID)
 		return false
 	}
-	return spec.Melee && spec.HasInterrupt
+	return spec.HasInterrupt
 }

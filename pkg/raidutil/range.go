@@ -32,25 +32,35 @@ func GroupMembersWithin(guid wow.GUID, yards float32) []*RangeResult {
 
 func updateRanges() {
 	luatable.Wipe(ranges)
-	if !wow.IsInRaid() {
-		return
+	inRaid := wow.IsInRaid()
+	prefix := "party"
+	if inRaid {
+		prefix = "raid"
 	}
 
 	num := wow.GetNumGroupMembers()
 	for i := 1; i <= num; i++ {
-		src := wow.UnitID("raid" + luastrings.ToString(i))
+		src := wow.UnitID(prefix + luastrings.ToString(i))
+		if !inRaid && i == num {
+			src = "player"
+		}
 		srcGUID := wow.UnitGUID(src)
 		srcX, srcY, srcInst := hbd.UnitWorldPosition(src)
 		var result []*RangeResult
-
-		for j := 1; j < i; j++ {
-			dst := wow.UnitID("raid" + luastrings.ToString(j))
+		for j := 1; j < num; j++ {
+			dst := wow.UnitID(prefix + luastrings.ToString(j))
 			dstX, dstY, dstInst := hbd.UnitWorldPosition(dst)
 			if dstInst == srcInst {
 				yards := hbd.WorldDistance(srcInst, srcX, srcY, dstX, dstY)
+				dstGUID := wow.UnitGUID(dst)
 				result = append(result, &RangeResult{
 					UnitID: dst,
-					GUID:   wow.UnitGUID(dst),
+					GUID:   dstGUID,
+					Yards:  yards,
+				})
+				ranges[dstGUID] = append(ranges[dstGUID], &RangeResult{
+					UnitID: src,
+					GUID:   srcGUID,
 					Yards:  yards,
 				})
 			}
